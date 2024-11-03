@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <title>pydeck</title>
+        <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <script src='https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@~9.0.*/dist/index.js'></script>
+    <style>
+    body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#deck-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+#deck-container canvas {
+  z-index: 1;
+  background: none;
+}
+    </style>
+  </head>
+  <body>
+    <div id="deck-container">
+    </div>
+  </body>
+  <script>
+    const container = document.getElementById('deck-container');
+    const jsonInput = {
+  "initialViewState": {
+    "bearing": 0,
+    "latitude": 36.047,
+    "longitude": 137.5936,
+    "maxZoom": 15,
+    "minZoom": 1,
+    "pitch": 50,
+    "zoom": 5
+  },
+  "layers": [
+    {
+      "@@type": "ColumnLayer",
+      "autoHighlight": true,
+      "data": [
+        {
+          "color": [
+            117,
+            236,
+            227
+          ],
+          "kjName": "\u5927\u4e09\u5cf6",
+          "knName": "\u30aa\u30aa\u30df\u30b7\u30de",
+          "lat": 34.25,
+          "lon": 133.00666666666666,
+          "\u6c17\u6e29": 19.3,
+          "\u6e7f\u5ea6": 94.0,
+          "\u98a8\u5411": 7.0,
+          "\u98a8\u901f": 2.4,
+          "\uff11\u6642\u9593\u96e8\u91cf": 7.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 100.5
+        },
+        {
+          "color": [
+            147,
+            54,
+            78
+          ],
+          "kjName": "\u7389\u5ddd",
+          "knName": "\u30bf\u30de\u30ac\u30ef",
+          "lat": 34.01833333333333,
+          "lon": 132.94,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 64.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 8.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 157.0
+        },
+        {
+          "color": [
+            156,
+            123,
+            33
+          ],
+          "kjName": "\u4eca\u6cbb",
+          "knName": "\u30a4\u30de\u30d0\u30ea",
+          "lat": 34.053333333333335,
+          "lon": 132.975,
+          "\u6c17\u6e29": 19.3,
+          "\u6e7f\u5ea6": 96.0,
+          "\u98a8\u5411": 13.0,
+          "\u98a8\u901f": 3.4,
+          "\uff11\u6642\u9593\u96e8\u91cf": 44.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 3.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 130.5
+        },
+        {
+          "color": [
+            125,
+            198,
+            99
+          ],
+          "kjName": "\u897f\u6761",
+          "knName": "\u30b5\u30a4\u30b8\u30e7\u30a6",
+          "lat": 33.915,
+          "lon": 133.08,
+          "\u6c17\u6e29": 19.6,
+          "\u6e7f\u5ea6": 96.0,
+          "\u98a8\u5411": 16.0,
+          "\u98a8\u901f": 5.1,
+          "\uff11\u6642\u9593\u96e8\u91cf": 25.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 6.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 68.0
+        },
+        {
+          "color": [
+            122,
+            237,
+            230
+          ],
+          "kjName": "\u65b0\u5c45\u6d5c",
+          "knName": "\u30cb\u30a4\u30cf\u30de",
+          "lat": 33.93666666666667,
+          "lon": 133.33833333333334,
+          "\u6c17\u6e29": 19.8,
+          "\u6e7f\u5ea6": 97.0,
+          "\u98a8\u5411": 10.0,
+          "\u98a8\u901f": 1.1,
+          "\uff11\u6642\u9593\u96e8\u91cf": 6.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 2.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 27.0
+        },
+        {
+          "color": [
+            95,
+            225,
+            187
+          ],
+          "kjName": "\u56db\u56fd\u4e2d\u592e",
+          "knName": "\u30b7\u30b3\u30af\u30c1\u30e5\u30a6\u30aa\u30a6",
+          "lat": 33.98166666666667,
+          "lon": 133.58166666666668,
+          "\u6c17\u6e29": 20.9,
+          "\u6e7f\u5ea6": 96.0,
+          "\u98a8\u5411": 11.0,
+          "\u98a8\u901f": 4.1,
+          "\uff11\u6642\u9593\u96e8\u91cf": 13.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 2.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 28.5
+        },
+        {
+          "color": [
+            97,
+            230,
+            202
+          ],
+          "kjName": "\u5bcc\u90f7",
+          "knName": "\u30c8\u30df\u30b5\u30c8",
+          "lat": 33.915,
+          "lon": 133.51,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 11.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 42.0
+        },
+        {
+          "color": [
+            140,
+            6,
+            113
+          ],
+          "kjName": "\u677e\u5c71",
+          "knName": "\u30de\u30c4\u30e4\u30de",
+          "lat": 33.843333333333334,
+          "lon": 132.77666666666667,
+          "\u6c17\u6e29": 19.5,
+          "\u6e7f\u5ea6": 98.0,
+          "\u98a8\u5411": 15.0,
+          "\u98a8\u901f": 5.6,
+          "\uff11\u6642\u9593\u96e8\u91cf": 76.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 7.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 121.0
+        },
+        {
+          "color": [
+            140,
+            1,
+            115
+          ],
+          "kjName": "\u677e\u5c71\u5357\u5409\u7530",
+          "knName": "\u30de\u30c4\u30e4\u30de\u30df\u30ca\u30df\u30e8\u30b7\u30c0\uff1a\u677e\u5c71\u7a7a\u6e2f",
+          "lat": 33.82666666666667,
+          "lon": 132.69833333333332,
+          "\u6c17\u6e29": 19.2,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": 15.0,
+          "\u98a8\u901f": 13.7,
+          "\uff11\u6642\u9593\u96e8\u91cf": 76.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 10.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 135.5
+        },
+        {
+          "color": [
+            143,
+            240,
+            241
+          ],
+          "kjName": "\u4e0a\u6797",
+          "knName": "\u30ab\u30df\u30cf\u30e4\u30b7",
+          "lat": 33.73833333333333,
+          "lon": 132.89,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 4.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 36.5
+        },
+        {
+          "color": [
+            148,
+            240,
+            243
+          ],
+          "kjName": "\u6210\u5c31\u793e",
+          "knName": "\u30b8\u30e7\u30a6\u30b8\u30e5\u30b7\u30e3",
+          "lat": 33.795,
+          "lon": 133.13166666666666,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 3.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 1.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 47.0
+        },
+        {
+          "color": [
+            151,
+            240,
+            244
+          ],
+          "kjName": "\u9577\u6d5c",
+          "knName": "\u30ca\u30ac\u30cf\u30de",
+          "lat": 33.61666666666667,
+          "lon": 132.48,
+          "\u6c17\u6e29": 20.5,
+          "\u6e7f\u5ea6": 91.0,
+          "\u98a8\u5411": 14.0,
+          "\u98a8\u901f": 7.8,
+          "\uff11\u6642\u9593\u96e8\u91cf": 3.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 2.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 45.0
+        },
+        {
+          "color": [
+            171,
+            241,
+            251
+          ],
+          "kjName": "\u4e2d\u5c71",
+          "knName": "\u30ca\u30ab\u30e4\u30de",
+          "lat": 33.638333333333335,
+          "lon": 132.70833333333334,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 1.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 51.0
+        },
+        {
+          "color": [
+            179,
+            241,
+            253
+          ],
+          "kjName": "\u4e45\u4e07",
+          "knName": "\u30af\u30de",
+          "lat": 33.663333333333334,
+          "lon": 132.895,
+          "\u6c17\u6e29": 24.0,
+          "\u6e7f\u5ea6": 87.0,
+          "\u98a8\u5411": 3.0,
+          "\u98a8\u901f": 2.5,
+          "\uff11\u6642\u9593\u96e8\u91cf": 0.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 32.0
+        },
+        {
+          "color": [
+            171,
+            241,
+            251
+          ],
+          "kjName": "\u5927\u6d32",
+          "knName": "\u30aa\u30aa\u30ba",
+          "lat": 33.50833333333333,
+          "lon": 132.535,
+          "\u6c17\u6e29": 26.7,
+          "\u6e7f\u5ea6": 86.0,
+          "\u98a8\u5411": 9.0,
+          "\u98a8\u901f": 4.2,
+          "\uff11\u6642\u9593\u96e8\u91cf": 1.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 54.0
+        },
+        {
+          "color": [
+            157,
+            241,
+            246
+          ],
+          "kjName": "\u7345\u5b50\u8d8a\u5ce0",
+          "knName": "\u30b7\u30b7\u30b4\u30a8\u30c8\u30a6\u30b2",
+          "lat": 33.54333333333334,
+          "lon": 132.83166666666668,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 2.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 43.0
+        },
+        {
+          "color": [
+            137,
+            239,
+            239
+          ],
+          "kjName": "\u702c\u6238",
+          "knName": "\u30bb\u30c8",
+          "lat": 33.446666666666665,
+          "lon": 132.25666666666666,
+          "\u6c17\u6e29": 21.6,
+          "\u6e7f\u5ea6": 97.0,
+          "\u98a8\u5411": 14.0,
+          "\u98a8\u901f": 8.8,
+          "\uff11\u6642\u9593\u96e8\u91cf": 4.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 1.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 54.5
+        },
+        {
+          "color": [
+            171,
+            241,
+            251
+          ],
+          "kjName": "\u516b\u5e61\u6d5c",
+          "knName": "\u30e4\u30ef\u30bf\u30cf\u30de",
+          "lat": 33.44833333333333,
+          "lon": 132.43333333333334,
+          "\u6c17\u6e29": NaN,
+          "\u6e7f\u5ea6": NaN,
+          "\u98a8\u5411": NaN,
+          "\u98a8\u901f": NaN,
+          "\uff11\u6642\u9593\u96e8\u91cf": 1.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.5,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 50.0
+        },
+        {
+          "color": [
+            176,
+            241,
+            252
+          ],
+          "kjName": "\u5b87\u548c",
+          "knName": "\u30a6\u30ef",
+          "lat": 33.36666666666667,
+          "lon": 132.50333333333333,
+          "\u6c17\u6e29": 25.4,
+          "\u6e7f\u5ea6": 89.0,
+          "\u98a8\u5411": 9.0,
+          "\u98a8\u901f": 3.7,
+          "\uff11\u6642\u9593\u96e8\u91cf": 0.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 49.0
+        },
+        {
+          "color": [
+            179,
+            241,
+            253
+          ],
+          "kjName": "\u5b87\u548c\u5cf6",
+          "knName": "\u30a6\u30ef\u30b8\u30de",
+          "lat": 33.22666666666667,
+          "lon": 132.55166666666668,
+          "\u6c17\u6e29": 27.8,
+          "\u6e7f\u5ea6": 82.0,
+          "\u98a8\u5411": 9.0,
+          "\u98a8\u901f": 6.4,
+          "\uff11\u6642\u9593\u96e8\u91cf": 0.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 27.0
+        },
+        {
+          "color": [
+            176,
+            241,
+            252
+          ],
+          "kjName": "\u8fd1\u6c38",
+          "knName": "\u30c1\u30ab\u30ca\u30ac",
+          "lat": 33.25333333333333,
+          "lon": 132.675,
+          "\u6c17\u6e29": 28.8,
+          "\u6e7f\u5ea6": 68.0,
+          "\u98a8\u5411": 9.0,
+          "\u98a8\u901f": 3.9,
+          "\uff11\u6642\u9593\u96e8\u91cf": 0.5,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 54.5
+        },
+        {
+          "color": [
+            179,
+            241,
+            253
+          ],
+          "kjName": "\u5fa1\u8358",
+          "knName": "\u30df\u30b7\u30e7\u30a6",
+          "lat": 32.96333333333333,
+          "lon": 132.57,
+          "\u6c17\u6e29": 26.5,
+          "\u6e7f\u5ea6": 90.0,
+          "\u98a8\u5411": 10.0,
+          "\u98a8\u901f": 5.1,
+          "\uff11\u6642\u9593\u96e8\u91cf": 0.0,
+          "\uff11\uff10\u5206\u9593\u96e8\u91cf": 0.0,
+          "\uff12\uff14\u6642\u9593\u96e8\u91cf": 73.0
+        }
+      ],
+      "elevationRange": [
+        0,
+        500
+      ],
+      "elevationScale": 2500,
+      "extruded": true,
+      "getElevation": "@@=\uff11\u6642\u9593\u96e8\u91cf",
+      "getFillColor": "@@=color",
+      "getLineColor": [
+        0,
+        0,
+        0
+      ],
+      "getPosition": "@@=[lon, lat]",
+      "id": "1479ff51-3fba-4710-bed9-5ceeae91059d",
+      "pickable": true,
+      "radius": 2500
+    }
+  ],
+  "mapProvider": "carto",
+  "mapStyle": "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  "views": [
+    {
+      "@@type": "MapView",
+      "controller": true
+    }
+  ]
+};
+    const tooltip = {'html': '地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>気温：{気温}℃<br>10分間雨量：{１０分間雨量}mm<br>1時間雨量：{１時間雨量}mm<br>24時間雨量：{２４時間雨量}mm', 'style': {'background': 'grey', 'color': 'white', 'font-family': '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', 'z-index': '5000'}};
+    const customLibraries = null;
+    const configuration = null;
+
+    const deckInstance = createDeck({
+                  container,
+      jsonInput,
+      tooltip,
+      customLibraries,
+      configuration
+    });
+
+  </script>
+</html>
