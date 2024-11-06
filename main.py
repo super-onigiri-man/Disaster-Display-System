@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 import datetime
-from datetime import timedelta, timezone
+from datetime import timedelta, timezone,datetime
 from cmcrameri import cm #色
 import numpy as np #アメダスデータの調整
 import pydeck as pdk #地図の描画
@@ -12,12 +12,21 @@ import statistics #座標の中央値を求めるに使用
 st.set_page_config(page_title="10分間雨量", layout="wide", initial_sidebar_state="collapsed")
 
 def get_data():
-    now = datetime.datetime.now()
-    adjusted_time = now - timedelta(minutes=10)
-    adjusted_time = adjusted_time.replace(minute=(adjusted_time.minute // 10) * 10, second=0)
-    jst = timezone(timedelta(hours=+9))
-    adjusted_time_jst = adjusted_time.astimezone(jst)
-    amedas_time = adjusted_time_jst.strftime('%Y%m%d%H%M%S')
+    # 気象庁公式から時刻を得る
+    url = "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt"
+    response = requests.get(url)
+    amedas_time = response.text.strip()
+
+    # ISO 8601形式の文字列をdatetimeオブジェクトに変換
+    date_object = datetime.fromisoformat(amedas_time)
+
+    # 指定された形式に変換して出力
+    amedas_time = date_object.strftime('%Y%m%d%H%M%S')
+    # print(amedas_time)
+
+    # formatted_time = date_object.strftime('%Y年%m月%d日 %H時%M分')
+    # print(str(formatted_time)+'現在')
+
 
     url = "https://www.jma.go.jp/bosai/amedas/data/map/" + str(amedas_time) + ".json"
     response = requests.get(url)
