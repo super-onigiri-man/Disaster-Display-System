@@ -1,0 +1,2 @@
+cd git/Disaster Display System
+streamlit run main.py
