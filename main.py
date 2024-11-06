@@ -58,6 +58,37 @@ def temp_color(result):
 
     return result
 
+def pre10m_color(result):
+    result = result.dropna(subset=["１０分間雨量"]) #欠損値があった場合はその観測点削除
+
+    colors = cm.hawaii_r(np.linspace(0, 1, 256))
+    rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
+
+    # Now the min and max functions should work correctly
+    min_height = 0
+    max_height = 50
+    result["color"] = result["１０分間雨量"].apply(
+        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
+    )
+
+    return result
+
+def pre1h_color(result):
+
+    result = result.dropna(subset=["１時間雨量"]) #欠損値があった場合はその観測点削
+
+    colors = cm.hawaii_r(np.linspace(0, 1, 256))
+    rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
+
+    # Now the min and max functions should work correctly
+    min_height = 0
+    max_height = result["１時間雨量"].max()
+    result["color"] = result["１時間雨量"].apply(
+        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
+    )
+
+    return result
+
 def pre24h_color(result):
     result = result.dropna(subset=["２４時間雨量"])
 
@@ -82,7 +113,7 @@ def main():
     if st.button('実行'):
         if option == '10分間降水量':
             data = get_data()
-            data = pre24h_color(data)
+            data = pre10m_color(data)
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -123,7 +154,7 @@ def main():
 
     if option == '1時間降水量':
             data = get_data()
-            data = pre24h_color(data)
+            data = pre1h_color(data)
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
