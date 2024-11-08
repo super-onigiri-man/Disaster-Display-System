@@ -77,9 +77,8 @@ def pre10m_color(result):
     min_height = 0
     max_height = 50
     result["color"] = result["１０分間雨量"].apply(
-        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
+        lambda h: rgb_colors[max(0, min(255, int(255 * ((h - min_height) / (max_height - min_height)))))]
     )
-
     return result
 
 def pre1h_color(result):
@@ -93,9 +92,8 @@ def pre1h_color(result):
     min_height = 0
     max_height = result["１時間雨量"].max()
     result["color"] = result["１時間雨量"].apply(
-        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
+        lambda h: rgb_colors[max(0, min(255, int(255 * ((h - min_height) / (max_height - min_height)))))]
     )
-
     return result
 
 def pre24h_color(result):
@@ -107,9 +105,8 @@ def pre24h_color(result):
     min_height = 0
     max_height = 200
     result["color"] = result["２４時間雨量"].apply(
-        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
+        lambda h: rgb_colors[max(0, min(255, int(255 * ((h - min_height) / (max_height - min_height)))))]
     )
-
     return result
 
 def main():
