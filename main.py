@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import datetime
 from datetime import timedelta, timezone,datetime
-from cmcrameri import cm #色
+from matplotlib import cm #色
 import numpy as np #アメダスデータの調整
 import pydeck as pdk #地図の描画
 import streamlit as st  # Streamlitをインポート
@@ -11,7 +11,7 @@ import statistics #座標の中央値を求めるに使用
 # ストリームリット用ページ設定をスクリプトの最初に配置
 st.set_page_config(page_title="10分間雨量", layout="wide", initial_sidebar_state="collapsed")
 
-def get_data():
+def get_now_date():
     # 気象庁公式から時刻を得る
     url = "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt"
     response = requests.get(url)
@@ -24,10 +24,12 @@ def get_data():
     amedas_time = date_object.strftime('%Y%m%d%H%M%S')
     # print(amedas_time)
 
-    # formatted_time = date_object.strftime('%Y年%m月%d日 %H時%M分')
+    formatted_time = date_object.strftime('%Y年%m月%d日 %H時%M分')
     # print(str(formatted_time)+'現在')
 
+    return amedas_time
 
+def get_data(amedas_time):
     url = "https://www.jma.go.jp/bosai/amedas/data/map/" + str(amedas_time) + ".json"
     response = requests.get(url)
     data = response.json()
@@ -53,17 +55,21 @@ def get_data():
     return result
 
 def temp_color(result):
-    result = result.dropna(subset=["気温"]) #欠損値があった場合はその観測点削除
 
-    colors = cm.hawaii_r(np.linspace(0, 1, 256))
-    rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
+    print(result)
+    result = result.dropna(subset=["気温"]) # 欠損値があった場合はその観測点削除
 
-    # Now the min and max functions should work correctly
-    min_height = -5
-    max_height = 35
-    result["color"] = result["気温"].apply(
-        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
-    )
+    colors = cm.get_cmap('viridis')  # matplotlibのカラーマップを使用
+
+    min_height = -10  # 気温の最小値を設定
+    max_height = 40   # 気温の最大値を設定
+
+    # カラーマップの範囲を0-1にスケール
+    def scale_color(h):
+        normalized = (h - min_height) / (max_height - min_height)
+        return tuple(int(x * 255) for x in colors(normalized)[:3])
+
+    result["color"] = result["気温"].map(scale_color)
 
     return result
 
@@ -118,7 +124,7 @@ def main():
 
     if st.button('実行'):
         if option == '10分間降水量':
-            data = get_data()
+            data = get_data(get_now_date())
             data = pre10m_color(data)
             layer = pdk.Layer(
                 "ColumnLayer",
@@ -159,7 +165,7 @@ def main():
    
 
     if option == '1時間降水量':
-            data = get_data()
+            data = get_data(get_now_date())
             data = pre1h_color(data)
             layer = pdk.Layer(
                 "ColumnLayer",
@@ -199,7 +205,7 @@ def main():
 
 
     if option == '24時間降水量':
-            data = get_data()
+            data = get_data(get_now_date())
             data = pre24h_color(data)
             layer = pdk.Layer(
                 "ColumnLayer",
@@ -238,7 +244,7 @@ def main():
             st.pydeck_chart(r)
 
     if option == '気温':
-            data = get_data()
+            data = get_data(get_now_date())
             data = temp_color(data)
             layer = pdk.Layer(
                 "ColumnLayer",
@@ -275,6 +281,9 @@ def main():
             r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
 
             st.pydeck_chart(r)
+
+    if st.button('htmlとしてダウンロード'):
+         r.to_html("amedas.html")
 
 
 if __name__ == "__main__":
