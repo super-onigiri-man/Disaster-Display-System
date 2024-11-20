@@ -243,44 +243,6 @@ def main():
 
             st.pydeck_chart(r)
 
-    if option == '気温':
-            data = get_data(get_now_date())
-            data = temp_color(data)
-            layer = pdk.Layer(
-                "ColumnLayer",
-                data=data,
-                get_position=["lon", "lat"],
-                get_elevation='気温',
-                elevation_scale=2500,
-                radius=2500,
-                elevation_range=[0, 500],
-                get_fill_color='color',
-                get_line_color=[0, 0, 0],
-                pickable=True,
-                auto_highlight=True,
-                extruded=True,
-            )
-
-                
-
-            tooltip = {
-                "html": "地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>気温：{気温}℃",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
-            }
-
-            view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=5,
-                min_zoom=1,
-                max_zoom=15,
-                pitch=50,
-                bearing=-0
-            )
-
-            r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
-
-            st.pydeck_chart(r)
 
     if st.button('htmlとしてダウンロード'):
          r.to_html("amedas.html")
