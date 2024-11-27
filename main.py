@@ -9,8 +9,8 @@ import streamlit as st  # Streamlitをインポート
 import statistics  # 座標の中央値を求めるに使用
 
 
-# ストリームリット用ページ設定をスクリプトの最初に配置
-st.set_page_config(page_title="10分間雨量", layout="wide", initial_sidebar_state="collapsed")
+# ページ設定
+st.set_page_config(page_title="雨量グラフ化", layout="wide", initial_sidebar_state="collapsed",page_icon="☂")
 
 def get_now_date():
     # 気象庁公式から時刻を得る
