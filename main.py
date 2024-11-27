@@ -1,12 +1,13 @@
 import requests
 import pandas as pd
 import datetime
-from datetime import timedelta, timezone,datetime
-from matplotlib import cm #色
-import numpy as np #アメダスデータの調整
-import pydeck as pdk #地図の描画
+from datetime import timedelta, timezone, datetime
+from cmcrameri import cm # 色
+import numpy as np  # アメダスデータの調整
+import pydeck as pdk  # 地図の描画
 import streamlit as st  # Streamlitをインポート
-import statistics #座標の中央値を求めるに使用
+import statistics  # 座標の中央値を求めるに使用
+
 
 # ストリームリット用ページ設定をスクリプトの最初に配置
 st.set_page_config(page_title="10分間雨量", layout="wide", initial_sidebar_state="collapsed")
@@ -54,26 +55,11 @@ def get_data(amedas_time):
 
     return result
 
-def temp_color(result):
 
-    print(result)
-    result = result.dropna(subset=["気温"]) # 欠損値があった場合はその観測点削除
-
-    colors = cm.get_cmap('viridis')  # matplotlibのカラーマップを使用
-
-    min_height = -10  # 気温の最小値を設定
-    max_height = 40   # 気温の最大値を設定
-
-    # カラーマップの範囲を0-1にスケール
-    def scale_color(h):
-        normalized = (h - min_height) / (max_height - min_height)
-        return tuple(int(x * 255) for x in colors(normalized)[:3])
-
-    result["color"] = result["気温"].map(scale_color)
-
-    return result
 
 def pre10m_color(result):
+    # 降水量分布用カラーマップ（10分）
+
     result = result.dropna(subset=["１０分間雨量"]) #欠損値があった場合はその観測点削除
 
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
@@ -83,12 +69,12 @@ def pre10m_color(result):
     min_height = 0
     max_height = 50
     result["color"] = result["１０分間雨量"].apply(
-        lambda h: rgb_colors[max(0, min(255, int(255 * ((h - min_height) / (max_height - min_height)))))]
+        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
     )
+
     return result
 
 def pre1h_color(result):
-
     result = result.dropna(subset=["１時間雨量"]) #欠損値があった場合はその観測点削
 
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
@@ -98,34 +84,39 @@ def pre1h_color(result):
     min_height = 0
     max_height = result["１時間雨量"].max()
     result["color"] = result["１時間雨量"].apply(
-        lambda h: rgb_colors[max(0, min(255, int(255 * ((h - min_height) / (max_height - min_height)))))]
+        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
     )
     return result
 
+
 def pre24h_color(result):
-    result = result.dropna(subset=["２４時間雨量"])
+    result = result.dropna(subset=["２４時間雨量"]) #欠損値があった場合はその観測点削除
 
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
     rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
 
+    # Now the min and max functions should work correctly
     min_height = 0
     max_height = 200
     result["color"] = result["２４時間雨量"].apply(
-        lambda h: rgb_colors[max(0, min(255, int(255 * ((h - min_height) / (max_height - min_height)))))]
+        lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
     )
+
     return result
 
-def main():
 
+def main():
     option = st.selectbox(
-    '表示させたい内容を選択してください', 
-    ['10分間降水量', '1時間降水量', '24時間降水量' , '気温']
+        '表示させたい内容を選択してください',
+        ['10分間降水量', '1時間降水量', '24時間降水量']
     )
 
+    
     if st.button('実行'):
         if option == '10分間降水量':
             data = get_data(get_now_date())
             data = pre10m_color(data)
+            # print(data)
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -141,18 +132,17 @@ def main():
                 extruded=True,
             )
 
-                
-
             tooltip = {
                 "html": "地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>10分間雨量：{１０分間雨量}mm",
                 "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
+            # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
                 longitude=statistics.median(data['lon']),
                 latitude=statistics.median(data['lat']),
-                zoom=5,
-                min_zoom=1,
+                zoom=4,
+                min_zoom=3,
                 max_zoom=15,
                 pitch=50,
                 bearing=-0
@@ -162,9 +152,7 @@ def main():
 
             st.pydeck_chart(r)
 
-   
-
-    if option == '1時間降水量':
+        if option == '1時間降水量':
             data = get_data(get_now_date())
             data = pre1h_color(data)
             layer = pdk.Layer(
@@ -181,8 +169,6 @@ def main():
                 auto_highlight=True,
                 extruded=True,
             )
-
-                
 
             tooltip = {
                 "html": "地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>1時間雨量：{１時間雨量}mm",
@@ -203,8 +189,7 @@ def main():
 
             st.pydeck_chart(r)
 
-
-    if option == '24時間降水量':
+        if option == '24時間降水量':
             data = get_data(get_now_date())
             data = pre24h_color(data)
             layer = pdk.Layer(
@@ -221,8 +206,6 @@ def main():
                 auto_highlight=True,
                 extruded=True,
             )
-
-                
 
             tooltip = {
                 "html": "地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>24時間雨量：{２４時間雨量}mm",
@@ -243,9 +226,11 @@ def main():
 
             st.pydeck_chart(r)
 
+           
+
 
     if st.button('htmlとしてダウンロード'):
-         r.to_html("amedas.html")
+        r.to_html("amedas.html")
 
 
 if __name__ == "__main__":
