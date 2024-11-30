@@ -669,7 +669,7 @@ def main():
 
             
 
-            ranksnow24h = snow12h_color(data)[1][['都道府県','kjName','knName','２４時間降雪量']]
+            ranksnow24h = snow24h_color(data)[1][['都道府県','kjName','knName','２４時間降雪量']]
             ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間降雪量']
             st.write('24時間降雪量ランキング')
             st.write(ranksnow24h)
