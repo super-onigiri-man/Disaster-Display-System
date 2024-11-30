@@ -57,9 +57,6 @@ pyparsing==3.1.2
 pyperclip==1.8.2
 pyproj==3.7.0
 pyshp==2.3.1
-PySide6==6.7.1
-PySide6_Addons==6.7.1
-PySide6_Essentials==6.7.1
 python-dateutil==2.9.0.post0
 pytz==2024.1
 pywin32-ctypes==0.2.2
@@ -69,7 +66,6 @@ requests==2.31.0
 rich==13.9.3
 rpds-py==0.20.0
 rsa==4.9
-scikit-fuzzy==0.4.2
 seaborn==0.13.2
 setuptools==69.5.1
 shapely==2.0.6
@@ -88,6 +84,5 @@ typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.1
 watchdog==5.0.3
-wordcloud==1.9.3
 wrapt==1.16.0
 zstandard==0.22.0
