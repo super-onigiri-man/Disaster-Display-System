@@ -7,11 +7,10 @@ import numpy as np  # アメダスデータの調整
 import pydeck as pdk  # 地図の描画
 import streamlit as st  # Streamlitをインポート
 import statistics  # 座標の中央値を求めるに使用
-import sys
 
 
 # ページ設定
-st.set_page_config(page_title="雨量グラフ化", layout="wide", initial_sidebar_state="collapsed",page_icon="☂")
+st.set_page_config(page_title="雨量グラフ化", layout="wide", initial_sidebar_state="collapsed",page_icon="☃☂")
 
 def get_now_date():
     # 気象庁公式から時刻を得る
@@ -485,7 +484,7 @@ def main():
 
             tooltip = {
                 "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>10分間雨量：{１０分間雨量}mm",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
             # 視点・ズームレベルの設定
@@ -534,7 +533,7 @@ def main():
 
             tooltip = {
                 "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>1時間雨量：{１時間雨量}mm",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
             view_state = pdk.ViewState(
@@ -583,7 +582,7 @@ def main():
 
             tooltip = {
                 "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>24時間雨量：{２４時間雨量}mm",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
             view_state = pdk.ViewState(
@@ -633,7 +632,7 @@ def main():
 
             tooltip = {
                 "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>1時間降雪量：{１時間降雪量}cm",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
             # 視点・ズームレベルの設定
@@ -683,7 +682,7 @@ def main():
 
             tooltip = {
                 "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>12時間降雪量：{１２時間降雪量}cm",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
             # 視点・ズームレベルの設定
@@ -734,7 +733,7 @@ def main():
 
             tooltip = {
                 "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>24時間降雪量：{２４時間降雪量}cm",
-                "style": {"background": "grey", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
             # 視点・ズームレベルの設定
