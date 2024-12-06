@@ -7,10 +7,12 @@ import numpy as np  # アメダスデータの調整
 import pydeck as pdk  # 地図の描画
 import streamlit as st  # Streamlitをインポート
 import statistics  # 座標の中央値を求めるに使用
+import geographiclib.geodesic
+import math
 
 
 # ページ設定
-st.set_page_config(page_title="雨量グラフ化", layout="wide", initial_sidebar_state="collapsed",page_icon="☃☂")
+st.set_page_config(page_title="降水・降雪量グラフ化", layout="wide", initial_sidebar_state="collapsed",page_icon="☂")
 
 def get_now_date():
     # 気象庁公式から時刻を得る
@@ -277,9 +279,12 @@ def get_snow_data(amedas_time):
 
     return result
 
-def select_pref(select_pref_list,result):
-    # ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '沖縄']
-    pref_list = ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '沖縄']
+def select_pref(select_pref_list,result): 
+    #都道府県選択用
+    # 地点は内閣府地方区分Aを元に沖縄地方に津波予報区の奄美群島・トカラ列島を追加
+
+    # ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', ''奄美群島・トカラ列島・沖縄'']
+    pref_list = ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄']
     notselect = list(set(pref_list) - set(select_pref_list))
 
     if set(notselect) == set(pref_list):
@@ -314,14 +319,107 @@ def select_pref(select_pref_list,result):
             result = result[~result.index.str[:2].astype(int).isin(range(71, 75))]
 
         elif i == '九州':
-            result = result[~result.index.str[:2].astype(int).isin(range(82, 89))]
+            result = result[~result.index.str[:2].astype(int).isin(range(82, 88))] #鹿児島県を除く九州の県
+            result = result[~result.index.str[:4].astype(int).isin(range(8806, 8871))] #鹿児島県・屋久島
 
-        elif i == '沖縄':
-            result = result[~result.index.str[:2].astype(int).isin(range(91, 95))]
+        elif i == '奄美・トカラ・沖縄':
+            result = result[~result.index.str[:4].astype(int).isin(range(8873, 8899))] #奄美群島・トカラ列島
+            result = result[~result.index.str[:2].astype(int).isin(range(91, 95))] #沖縄地方
 
 
     return result
 
+def zoom_calc(result):
+    # ズーム率計算
+    # 緯度(lat)：横線（赤道が0°）北緯、南緯 maxが北端、minが南端
+    # 経度(lon)：縦線（本初子午線（イギリス・グリニッジ天文台）が0°）東経、西経 maxが東端、minが西端
+    # ここでは東京都の小笠原諸島(44301,44316)南鳥島(44356)は計算上影響が出てくるため、計算から除外する
+
+    # 計算上影響が出る3島削除
+    result = result[~result.index.str[:3].astype(int).isin([443])]
+
+    North = result.sort_values(by='lat', ascending=False).head(1)
+    South = result.sort_values(by='lat', ascending=True).head(1)
+    East = result.sort_values(by='lon', ascending=False).head(1)
+    West = result.sort_values(by='lon', ascending=True).head(1)
+
+    # st.text(North.iloc[0]['kjName'])
+    # st.text(South.iloc[0]['kjName'])
+    # st.text(East.iloc[0]['kjName'])
+    # st.text(West.iloc[0]['kjName'])
+
+    geod = geographiclib.geodesic.Geodesic.WGS84
+
+    # 南北の距離を計算（引数は（地点Alat,lon,地点Blat,lon)
+    north_south= geod.Inverse(North.iloc[0]['lat'], North.iloc[0]['lon'], South.iloc[0]['lat'], South.iloc[0]['lon'])['s12']
+    north_south_distance = north_south / 1000
+
+     # 東西の距離を計算（引数は（地点Alat,lon,地点Blat,lon)
+    north_south= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
+    east_west_distance = north_south / 1000
+
+    zoom_distance = max(north_south_distance,east_west_distance)
+    # zoom_distance = north_south_distance
+
+    # st.text(zoom_distance)
+
+    # 距離によるズーム率
+    # 北海道宗谷岬ー沖縄与那国島 約3000km（zoom=zoom_calc(data)）
+    if 3000 < zoom_distance <= 3500:
+        # st.text('zoom4')
+        return 4
+    
+    elif 2500 < zoom_distance <= 3000:
+        # st.text('zoom4')
+        return 4
+
+    elif 2000 < zoom_distance <= 2500:
+        # st.text('zoom5')
+        return 5
+
+    elif 1500 < zoom_distance <= 2000: #北海道→中国地方
+        # st.text('zoom5')
+        return 4.8
+
+    elif 1000 < zoom_distance <=1500:
+        # st.text('zoom7')
+        return 5
+
+    else:
+        # st.text('zoom7')
+        return 5.8
+
+    
+def lat_lon_position(result):
+    # 地図の中心位置設定
+    # ここでは東京都の小笠原諸島（父島・母島）と南鳥島は計算上影響が出るため除外
+
+    # 計算上影響が出る3島削除
+    result = result[~result.index.str[:3].astype(int).isin([443])]
+
+    # 緯度経度をラジアンに変換
+    rad_lats = [math.radians(lat) for lat in result['lat']]
+    rad_lons = [math.radians(lon) for lon in result['lon']]
+
+    # x, y, z 座標を計算
+    x = [math.cos(lat) * math.cos(lon) for lat, lon in zip(rad_lats, rad_lons)]
+    y = [math.cos(lat) * math.sin(lon) for lat, lon in zip(rad_lats, rad_lons)]
+    z = [math.sin(lat) for lat in rad_lats]
+
+    # x, y, z 座標の平均を計算
+    avg_x = sum(x) / len(x)
+    avg_y = sum(y) / len(y)
+    avg_z = sum(z) / len(z)
+
+    # 緯度経度に変換
+    center_lon = math.atan2(avg_y, avg_x)
+    center_lat = math.atan2(avg_z, math.sqrt(avg_x**2 + avg_y**2))
+
+    # ラジアンを度に変換
+    center_lat = math.degrees(center_lat)
+    center_lon = math.degrees(center_lon)
+
+    return center_lat, center_lon
 
 def pre10m_color(result):
     # 降水量分布用カラーマップ（10分）
@@ -345,6 +443,8 @@ def pre10m_color(result):
         return result,dftop3
 
 def pre1h_color(result):
+    # 降水量分布用カラーマップ（1時間）
+
     result = result.dropna(subset=["１時間雨量"]) #欠損値があった場合はその観測点削
 
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
@@ -366,6 +466,8 @@ def pre1h_color(result):
 
 
 def pre24h_color(result):
+    # 降水量分布用カラーマップ（24時間）
+
     result = result.dropna(subset=["２４時間雨量"]) #欠損値があった場合はその観測点削除
 
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
@@ -452,7 +554,24 @@ def main():
 
     st.info('この情報は気象庁からの情報を取得していますが、速報値のため正確性は保証できません', icon=None)
 
-    selected_item = st.multiselect('表示させたい地方を選択してください（デフォルトは全国表示）', ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '沖縄'], default=['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '沖縄'])
+    with st.popover("地方区分について"):
+        st.title('地方区分について')
+        st.text('このサイトでは独自の地方区分を採用しています')
+        st.text('北海道：北海道')
+        st.text('東北：青森、岩手、秋田、宮城、山形、福島')
+        st.text('関東：茨城、栃木、群馬、埼玉、千葉、東京、神奈川')
+        st.text('中部：長野、山梨、静岡、愛知、岐阜、三重')
+        st.text('北陸：新潟、富山、石川、福井')
+        st.text('近畿：滋賀、京都、大阪、兵庫、奈良、和歌山')
+        st.text('中国：岡山、広島、島根、鳥取、山口')
+        st.text('四国：徳島、香川、愛媛、高知')
+        st.text('九州：福岡、大分、長崎、佐賀、熊本、宮崎、鹿児島県（本島、屋久島・種子島）')
+        st.text('奄美・トカラ・沖縄：鹿児島県（十島・奄美大島・沖永良部島・与論島）、沖縄県')
+        st.info('東京都の小笠原諸島（父島、母島）・南鳥島はへき地のため中心位置を求める式から外しているため見えにくい位置となっています')
+
+    
+
+    selected_item = st.multiselect('表示させたい地方を選択してください（デフォルトは全国表示）', ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄'], default=['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄'])
 
     option = st.selectbox(
         '表示させたい内容を選択してください',
@@ -489,9 +608,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=4,
+                longitude=lat_lon_position(data)[1],
+                latitude=lat_lon_position(data)[0],
+                zoom=zoom_calc(data),
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
@@ -509,6 +628,8 @@ def main():
                 rankpre10m.columns = ['都道府県名','地点名','地点名（よみ）','10分間雨量']
                 st.write('10分間降水量ランキング')
                 st.write(rankpre10m)
+
+# -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降水量':
             data = get_data(get_now_date()[0])
@@ -537,9 +658,9 @@ def main():
             }
 
             view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=5,
+                longitude=lat_lon_position(data)[1],
+                latitude=lat_lon_position(data)[0],
+                zoom=zoom_calc(data),
                 min_zoom=1,
                 max_zoom=15,
                 pitch=50,
@@ -549,7 +670,6 @@ def main():
             r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
 
             st.pydeck_chart(r)
-
             
             if pre1h_color(data)[1] is None:
                 st.write('選択された地方では現在、0.5mm以上の降水は観測されていません')
@@ -558,6 +678,8 @@ def main():
                 rankpre1h.columns = ['都道府県名','地点名','地点名（よみ）','1時間雨量']
                 st.write('1時間降水量ランキング')
                 st.write(rankpre1h)
+
+# -------------------------------------------------------------------------------------------------- 
 
         elif option == '24時間降水量':
             data = get_data(get_now_date()[0])
@@ -586,9 +708,9 @@ def main():
             }
 
             view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=5,
+                longitude=lat_lon_position(data)[1],
+                latitude=lat_lon_position(data)[0],
+                zoom=zoom_calc(data),
                 min_zoom=1,
                 max_zoom=15,
                 pitch=50,
@@ -597,9 +719,8 @@ def main():
 
             r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
 
-            st.pydeck_chart(r)
+            st.pydeck_chart(r)           
 
-            
             if pre24h_color(data)[1] is None:
                 st.write('選択された地方では現在、0.5mm以上の降水は観測されていません')
             else:
@@ -607,6 +728,8 @@ def main():
                 rankpre24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間雨量']
                 st.write('24時間降水量ランキング')
                 st.write(rankpre24h)
+
+# -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降雪量':
             data = get_snow_data(get_now_snow_time()[0])
@@ -637,9 +760,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=4,
+                longitude=lat_lon_position(data)[1],
+                latitude=lat_lon_position(data)[0],
+                zoom=zoom_calc(data),
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
@@ -657,6 +780,8 @@ def main():
                 ranksnow1h.columns = ['都道府県名','地点名','地点名（よみ）','1時間降雪量']
                 st.write('1時間降雪量ランキング')
                 st.write(ranksnow1h)
+
+# -------------------------------------------------------------------------------------------------- 
 
         elif option == '12時間降雪量':
             data = get_snow_data(get_now_snow_time()[0])
@@ -687,9 +812,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=4,
+                longitude=lat_lon_position(data)[1],
+                latitude=lat_lon_position(data)[0],
+                zoom=zoom_calc(data),
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
@@ -708,6 +833,8 @@ def main():
                 ranksnow12h.columns = ['都道府県名','地点名','地点名（よみ）','12時間降雪量']
                 st.write('12時間降雪量ランキング')
                 st.write(ranksnow12h)
+
+# -------------------------------------------------------------------------------------------------- 
 
         elif option == '24時間降雪量':
             data = get_snow_data(get_now_snow_time()[0])
@@ -738,9 +865,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=statistics.median(data['lon']),
-                latitude=statistics.median(data['lat']),
-                zoom=4,
+                longitude=lat_lon_position(data)[1],
+                latitude=lat_lon_position(data)[0],
+                zoom=zoom_calc(data),
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
