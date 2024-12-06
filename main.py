@@ -5,9 +5,8 @@ from datetime import datetime
 from cmcrameri import cm # 色
 import numpy as np  # アメダスデータの調整
 import pydeck as pdk  # 地図の描画
-import streamlit as st  # Streamlitをインポート
-import statistics  # 座標の中央値を求めるに使用
-import geographiclib.geodesic
+import streamlit as st  
+import geographiclib.geodesic # 座標の中央値を求めるに使用
 import math
 
 
@@ -330,7 +329,7 @@ def select_pref(select_pref_list,result):
     return result
 
 def zoom_calc(result):
-    # ズーム率計算
+    # ズーム率と中心位置の計算
     # 緯度(lat)：横線（赤道が0°）北緯、南緯 maxが北端、minが南端
     # 経度(lon)：縦線（本初子午線（イギリス・グリニッジ天文台）が0°）東経、西経 maxが東端、minが西端
     # ここでは東京都の小笠原諸島(44301,44316)南鳥島(44356)は計算上影響が出てくるため、計算から除外する
@@ -363,39 +362,8 @@ def zoom_calc(result):
 
     # st.text(zoom_distance)
 
-    # 距離によるズーム率
-    # 北海道宗谷岬ー沖縄与那国島 約3000km（zoom=zoom_calc(data)）
-    if 3000 < zoom_distance <= 3500:
-        # st.text('zoom4')
-        return 4
-    
-    elif 2500 < zoom_distance <= 3000:
-        # st.text('zoom4')
-        return 4
 
-    elif 2000 < zoom_distance <= 2500:
-        # st.text('zoom5')
-        return 5
-
-    elif 1500 < zoom_distance <= 2000: #北海道→中国地方
-        # st.text('zoom5')
-        return 4.8
-
-    elif 1000 < zoom_distance <=1500:
-        # st.text('zoom7')
-        return 5
-
-    else:
-        # st.text('zoom7')
-        return 5.8
-
-    
-def lat_lon_position(result):
     # 地図の中心位置設定
-    # ここでは東京都の小笠原諸島（父島・母島）と南鳥島は計算上影響が出るため除外
-
-    # 計算上影響が出る3島削除
-    result = result[~result.index.str[:3].astype(int).isin([443])]
 
     # 緯度経度をラジアンに変換
     rad_lats = [math.radians(lat) for lat in result['lat']]
@@ -419,7 +387,65 @@ def lat_lon_position(result):
     center_lat = math.degrees(center_lat)
     center_lon = math.degrees(center_lon)
 
-    return center_lat, center_lon
+    
+    # 距離によるズーム率
+    # 北海道宗谷岬ー沖縄与那国島 約3000km（zoom=zoom_calc(data)）
+    if 2500 < zoom_distance <= 3000:
+        center_lat = center_lat - 4
+        center_lon = center_lon + 4
+        # st.text(center_lon)
+        # st.text(center_lat)
+
+        # st.text('zoom4')
+        return center_lon,center_lat,4.5
+
+    elif 2000 < zoom_distance <= 2500:
+        # st.text('zoom5')
+        center_lat = center_lat - 4
+        center_lon = center_lon + 4
+        # st.text(center_lon)
+        # st.text(center_lat) 
+        return center_lon,center_lat,5
+    
+    elif 1800 < zoom_distance <= 2000 :
+        center_lat = center_lat - 1.5
+        center_lon = center_lon + 1.5
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,4.8
+
+
+    elif 1500 < zoom_distance <= 1800: #北海道→中国地方
+        # st.text('zoom5')
+        center_lat = center_lat - 4
+        center_lon = center_lon + 4
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,4.8
+
+    elif 1000 < zoom_distance <=1500:
+        # center_lat = center_lat - 2.5
+        # st.text(center_lon)
+        # st.text(center_lat)
+        # st.text('zoom7')
+        return center_lon,center_lat,5.2
+    
+    elif 800 < zoom_distance <= 1000:
+        # st.text('zoom7')
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,4.7
+
+    elif 500 < zoom_distance <= 800 :
+        # st.text('zoom7')
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,5.6
+    
+    else:
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,6.5
 
 def pre10m_color(result):
     # 降水量分布用カラーマップ（10分）
@@ -571,7 +597,10 @@ def main():
 
     
 
-    selected_item = st.multiselect('表示させたい地方を選択してください（デフォルトは全国表示）', ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄'], default=['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄'])
+    selected_item = st.multiselect('表示させたい地方を選択してください（デフォルトは全国表示）',
+                                    ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄'],
+                                    default=['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄'],
+                                    placeholder='地方が選択されていません')
 
     option = st.selectbox(
         '表示させたい内容を選択してください',
@@ -608,9 +637,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=lat_lon_position(data)[1],
-                latitude=lat_lon_position(data)[0],
-                zoom=zoom_calc(data),
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
@@ -658,9 +687,9 @@ def main():
             }
 
             view_state = pdk.ViewState(
-                longitude=lat_lon_position(data)[1],
-                latitude=lat_lon_position(data)[0],
-                zoom=zoom_calc(data),
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
                 min_zoom=1,
                 max_zoom=15,
                 pitch=50,
@@ -708,9 +737,9 @@ def main():
             }
 
             view_state = pdk.ViewState(
-                longitude=lat_lon_position(data)[1],
-                latitude=lat_lon_position(data)[0],
-                zoom=zoom_calc(data),
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
                 min_zoom=1,
                 max_zoom=15,
                 pitch=50,
@@ -760,9 +789,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=lat_lon_position(data)[1],
-                latitude=lat_lon_position(data)[0],
-                zoom=zoom_calc(data),
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
@@ -812,9 +841,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=lat_lon_position(data)[1],
-                latitude=lat_lon_position(data)[0],
-                zoom=zoom_calc(data),
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
@@ -865,9 +894,9 @@ def main():
 
             # 視点・ズームレベルの設定
             view_state = pdk.ViewState(
-                longitude=lat_lon_position(data)[1],
-                latitude=lat_lon_position(data)[0],
-                zoom=zoom_calc(data),
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
                 min_zoom=3,
                 max_zoom=15,
                 pitch=50,
