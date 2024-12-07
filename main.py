@@ -318,6 +318,7 @@ def select_pref(select_pref_list,result):
     return result
 
 def zoom_calc(result):
+
     # ズーム率と中心位置の計算
     # 緯度(lat)：横線（赤道が0°）北緯、南緯 maxが北端、minが南端
     # 経度(lon)：縦線（本初子午線（イギリス・グリニッジ天文台）が0°）東経、西経 maxが東端、minが西端
@@ -436,7 +437,98 @@ def zoom_calc(result):
     else:
         # st.text(center_lon)
         # st.text(center_lat)
-        return center_lon,center_lat,6.5
+        return center_lon,center_lat,5.6
+
+def zoom_snow_calc(result):
+    # ズーム率と中心位置の計算(積雪の深さ用)
+    # 緯度(lat)：横線（赤道が0°）北緯、南緯 maxが北端、minが南端
+    # 経度(lon)：縦線（本初子午線（イギリス・グリニッジ天文台）が0°）東経、西経 maxが東端、minが西端
+    # ここでは東京都の小笠原諸島(44301,44316)南鳥島(44356)は計算上影響が出てくるため、計算から除外する
+
+    # 計算上影響が出る3島削除
+    result = result[~result.index.str[:3].astype(int).isin([443])]
+
+    # 選択されている地域での4端を取得
+    North = result.sort_values(by='lat', ascending=False).head(1)
+    South = result.sort_values(by='lat', ascending=True).head(1)
+    East = result.sort_values(by='lon', ascending=False).head(1)
+    West = result.sort_values(by='lon', ascending=True).head(1)
+
+    # st.text(North.iloc[0]['kjName'])
+    # st.text(South.iloc[0]['kjName'])
+    # st.text(East.iloc[0]['kjName'])
+    # st.text(West.iloc[0]['kjName'])
+
+    geod = geographiclib.geodesic.Geodesic.WGS84
+
+    # 南北の距離を計算（引数は（地点Alat,lon,地点Blat,lon)
+    north_south= geod.Inverse(North.iloc[0]['lat'], North.iloc[0]['lon'], South.iloc[0]['lat'], South.iloc[0]['lon'])['s12']
+    north_south_distance = north_south / 1000
+
+     # 東西の距離を計算（引数は（地点Alat,lon,地点Blat,lon)
+    north_south= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
+    east_west_distance = north_south / 1000
+
+    # 東西南北の距離の長い方を採用（東西に長い地域に対応させるため）
+    zoom_distance = max(north_south_distance,east_west_distance)
+    # zoom_distance = north_south_distance
+
+    st.text(zoom_distance)
+
+
+    # 地図の中心位置設定
+
+    # 緯度経度をラジアンに変換
+    rad_lats = [math.radians(lat) for lat in result['lat']]
+    rad_lons = [math.radians(lon) for lon in result['lon']]
+
+    # x, y, z 座標を計算
+    x = [math.cos(lat) * math.cos(lon) for lat, lon in zip(rad_lats, rad_lons)]
+    y = [math.cos(lat) * math.sin(lon) for lat, lon in zip(rad_lats, rad_lons)]
+    z = [math.sin(lat) for lat in rad_lats]
+
+    # x, y, z 座標の平均を計算
+    avg_x = sum(x) / len(x)
+    avg_y = sum(y) / len(y)
+    avg_z = sum(z) / len(z)
+
+    # 緯度経度に変換
+    center_lon = math.atan2(avg_y, avg_x)
+    center_lat = math.atan2(avg_z, math.sqrt(avg_x**2 + avg_y**2))
+
+    # ラジアンを度に変換
+    center_lat = math.degrees(center_lat)
+    center_lon = math.degrees(center_lon)
+
+    
+    # 距離によるズーム率
+    # 北海道宗谷岬ー沖縄与那国島 約3000km（zoom=zoom_calc(data)）
+    
+    if 1300 < zoom_distance <= 2000 :
+        center_lat = 37.38
+        center_lon = 136.38
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,4.6
+    
+    elif 1000 < zoom_distance <= 1300:
+        center_lat = center_lat - 4
+        center_lon = center_lon - 1
+        # st.text('zoom7')
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,5.2
+
+    elif 500 < zoom_distance <= 1000 :
+        # st.text('zoom7')
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,5
+    
+    else:
+        # st.text(center_lon)
+        # st.text(center_lat)
+        return center_lon,center_lat,5.6
 
 def pre10m_color(result):
     # 降水量分布用カラーマップ（10分）
@@ -624,7 +716,7 @@ def main():
         st.text('中国：岡山、広島、島根、鳥取、山口')
         st.text('四国：徳島、香川、愛媛、高知')
         st.text('九州：福岡、大分、長崎、佐賀、熊本、宮崎、鹿児島県（本島、屋久島・種子島）')
-        st.text('奄美・トカラ・沖縄：鹿児島県（十島・奄美大島・沖永良部島・与論島）、沖縄県')
+        st.text('奄美・トカラ・沖縄：鹿児島県（十島村・奄美大島・沖永良部島・与論島）、沖縄県')
         st.info('東京都の小笠原諸島（父島、母島）・南鳥島はへき地のため中心位置を求める式から外しているため見えにくい位置となっています')
 
     
@@ -970,9 +1062,9 @@ def main():
 
                 # 視点・ズームレベルの設定
                 view_state = pdk.ViewState(
-                    longitude=float(zoom_calc(data)[0]),
-                    latitude=float(zoom_calc(data)[1]),
-                    zoom=zoom_calc(data)[2],
+                    longitude=float(zoom_snow_calc(data)[0]),
+                    latitude=float(zoom_snow_calc(data)[1]),
+                    zoom=zoom_snow_calc(data)[2],
                     min_zoom=3,
                     max_zoom=15,
                     pitch=50,
