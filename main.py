@@ -22,7 +22,7 @@ def get_now_date():
     # ISO 8601形式の文字列をdatetimeオブジェクトに変換
     date_object = datetime.fromisoformat(amedas_time)
 
-    # 指定された形式に変換して出力
+    # 変換して出力
     amedas_time = date_object.strftime('%Y%m%d%H%M%S')
     # print(amedas_time)
 
@@ -44,26 +44,15 @@ def get_now_snow_time():
     # 時刻を丸める（分と秒をゼロにする）
     rounded_date_object = date_object.replace(minute=0, second=0)
 
-    # 必要に応じて元の形式での出力も持たせたままにできます
     amedas_time = rounded_date_object.strftime('%Y%m%d%H%M%S')
     formatted_time = rounded_date_object.strftime('%Y年%m月%d日 %H時%M分')
-    print(amedas_time)
+    # print(amedas_time)
 
     return amedas_time, formatted_time
 
-def get_data(amedas_time):
+def get_amedas_position():
+    # アメダスの地点データ取得
 
-    # アメダスデータ取得
-    url = "https://www.jma.go.jp/bosai/amedas/data/map/" + str(amedas_time) + ".json"
-    response = requests.get(url)
-    data = response.json()
-    df = pd.DataFrame.from_dict(data, orient='index')
-    df = df[['precipitation10m', 'precipitation1h', 'precipitation24h']]
-    df.columns = ['１０分間雨量', '１時間雨量', '２４時間雨量']
-    for col in df.columns:
-        df[col] = df[col].apply(lambda x: x[0] if isinstance(x, list) else x)
-
-    # 地点情報の取得
     url = "https://www.jma.go.jp/bosai/amedas/const/amedastable.json"
     response = requests.get(url)
     data = response.json()
@@ -71,20 +60,35 @@ def get_data(amedas_time):
     df2.drop(columns=['type', 'elems', 'alt', 'enName'], inplace=True) #いらない情報を削除
     df2[['lat1', 'lat2']] = pd.DataFrame(df2['lat'].tolist(), index=df2.index)
     df2[['lon1', 'lon2']] = pd.DataFrame(df2['lon'].tolist(), index=df2.index)
-    df2['lat'] = df2['lat1'] + df2['lat2'] / 60 #緯度経度を１０進法に変換
+    df2['lat'] = df2['lat1'] + df2['lat2'] / 60 #緯度経度を６０進法に変換
     df2['lon'] = df2['lon1'] + df2['lon2'] / 60 
     df2.drop(columns=['lat1', 'lat2', 'lon1', 'lon2'], inplace=True)
 
-    # アメダス地点とアメダスデータをアメダス番号で紐づけ
-    result = pd.concat([df2, df], axis=1)
+    return df2
 
-    return result
+
+def get_data(amedas_time):
+
+    # アメダスデータ取得
+    url = "https://www.jma.go.jp/bosai/amedas/data/map/" + str(amedas_time) + ".json"
+    # st.text(url)
+    response = requests.get(url)
+    # print(response.text)
+    data = response.json()
+    df = pd.DataFrame.from_dict(data, orient='index')
+    df = df[['precipitation10m', 'precipitation1h', 'precipitation24h']]
+    df.columns = ['１０分間雨量', '１時間雨量', '２４時間雨量']
+    for col in df.columns:
+        df[col] = df[col].apply(lambda x: x[0] if isinstance(x, list) else x)
+
+    return df
 
 def pref_number(result):
 
     pref_code_num = {
         # 地方区分に関しては内閣府地方区分Aを参照
         # 豪雪地帯の福井・石川・富山・新潟を北陸地方と区分した
+        # 鹿児島県の屋久島・種子島以南の島は「奄美大島・トカラ列島」として扱う
         # 札幌管区気象台
         11:"北海道 宗谷地方",
         12:"北海道 上川地方",
@@ -255,28 +259,13 @@ def get_snow_data(amedas_time):
     response = requests.get(url)
     data = response.json()
     df = pd.DataFrame.from_dict(data, orient='index')
-    print(df)
-    df = df[['snow1h','snow6h','snow12h','snow24h']]
-    df.columns = ['１時間降雪量','６時間降水量','１２時間降雪量','２４時間降雪量']
+    # print(df)
+    df = df[['snow','snow1h','snow6h','snow12h','snow24h']]
+    df.columns = ['積雪の深さ','１時間降雪量','６時間降水量','１２時間降雪量','２４時間降雪量']
     for col in df.columns:
         df[col] = df[col].apply(lambda x: x[0] if isinstance(x, list) else x)
 
-    # 地点情報の取得
-    url = "https://www.jma.go.jp/bosai/amedas/const/amedastable.json"
-    response = requests.get(url)
-    data = response.json()
-    df2 = pd.DataFrame.from_dict(data, orient='index')
-    df2.drop(columns=['type', 'elems', 'alt', 'enName'], inplace=True) #いらない情報を削除
-    df2[['lat1', 'lat2']] = pd.DataFrame(df2['lat'].tolist(), index=df2.index)
-    df2[['lon1', 'lon2']] = pd.DataFrame(df2['lon'].tolist(), index=df2.index)
-    df2['lat'] = df2['lat1'] + df2['lat2'] / 60 #緯度経度を１０進法に変換
-    df2['lon'] = df2['lon1'] + df2['lon2'] / 60 
-    df2.drop(columns=['lat1', 'lat2', 'lon1', 'lon2'], inplace=True)
-
-    # アメダス地点とアメダスデータをアメダス番号で紐づけ
-    result = pd.concat([df2, df], axis=1)
-
-    return result
+    return df
 
 def select_pref(select_pref_list,result): 
     #都道府県選択用
@@ -337,6 +326,7 @@ def zoom_calc(result):
     # 計算上影響が出る3島削除
     result = result[~result.index.str[:3].astype(int).isin([443])]
 
+    # 選択されている地域での4端を取得
     North = result.sort_values(by='lat', ascending=False).head(1)
     South = result.sort_values(by='lat', ascending=True).head(1)
     East = result.sort_values(by='lon', ascending=False).head(1)
@@ -357,6 +347,7 @@ def zoom_calc(result):
     north_south= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
     east_west_distance = north_south / 1000
 
+    # 東西南北の距離の長い方を採用（東西に長い地域に対応させるため）
     zoom_distance = max(north_south_distance,east_west_distance)
     # zoom_distance = north_south_distance
 
@@ -512,6 +503,33 @@ def pre24h_color(result):
     else:
         return result,dftop3
 
+def snow_color(result):
+    # 積雪の深さ分布用カラーマップ
+
+    if result['積雪の深さ'] .all() == None:
+        # 奄美・トカラ・沖縄には積雪の観測がない
+        return None , None
+    
+    else:
+
+        result = result.dropna(subset=["積雪の深さ"]) #欠損値があった場合はその観測点削除
+
+        colors = cm.hawaii_r(np.linspace(0, 1, 256))
+        rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
+
+        # 最小値（0cm）と最大値を設定　これを参考に色付け
+        min_height = 0
+        max_height = 250
+        result["color"] = result["積雪の深さ"].apply(
+            lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
+        )
+
+        dftop3 = result.sort_values(by='積雪の深さ', ascending=False).head(3)
+        if dftop3['積雪の深さ'].all() == 0:
+            return result,None
+        else:
+            return result,dftop3
+
 def snow1h_color(result):
     # 降雪量分布用カラーマップ（1時間）
 
@@ -577,6 +595,20 @@ def snow24h_color(result):
 
 
 def main():
+    # 地点データ
+    amedas_position = get_amedas_position()
+
+    # データ（雨）
+    amedas_pre_time,display_pre_time = get_now_date()
+    amedas_precipitation = pd.concat([get_data(amedas_pre_time), amedas_position], axis=1)
+    amedas_precipitation = pref_number(amedas_precipitation)
+
+    # データ（雪）
+    amedas_snow_time,display_snow_time = get_now_snow_time()
+    amedas_snow = pd.concat([get_snow_data(amedas_snow_time), amedas_position], axis=1)
+    amedas_snow = pref_number(amedas_snow)
+
+    # st.text(display_pre_time)
 
     st.info('この情報は気象庁からの情報を取得していますが、速報値のため正確性は保証できません', icon=None)
 
@@ -604,17 +636,17 @@ def main():
 
     option = st.selectbox(
         '表示させたい内容を選択してください',
-        ['10分間降水量', '1時間降水量', '24時間降水量','1時間降雪量','12時間降雪量','24時間降雪量']
+        ['10分間降水量', '1時間降水量', '24時間降水量','積雪の深さ','1時間降雪量','12時間降雪量','24時間降雪量']
     )
+
+# ------------------------------------------------------------------------------------------------------------------------
 
     
     if st.button('実行'):
         if option == '10分間降水量':
-            data = get_data(get_now_date()[0])
-            data = pref_number(data)
-            data = select_pref(selected_item,data)
+            data = select_pref(selected_item,amedas_precipitation)
             data = pre10m_color(data)[0]
-            st.text(str(get_now_date()[1])+'現在')
+            st.text(str(display_pre_time)+'現在')
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -661,11 +693,9 @@ def main():
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降水量':
-            data = get_data(get_now_date()[0])
-            data = pref_number(data)
-            data = select_pref(selected_item,data)
+            data = select_pref(selected_item,amedas_precipitation)
             data = pre1h_color(data)[0]
-            st.text(str(get_now_date()[1])+'現在')
+            st.text(str(display_pre_time)+'現在')
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -711,11 +741,9 @@ def main():
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '24時間降水量':
-            data = get_data(get_now_date()[0])
-            data = pref_number(data)
-            data = select_pref(selected_item,data)
+            data = select_pref(selected_item,amedas_precipitation)
             data = pre24h_color(data)[0]
-            st.text(str(get_now_date()[1])+'現在')
+            st.text(str(display_pre_time)+'現在')
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -761,12 +789,10 @@ def main():
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降雪量':
-            data = get_snow_data(get_now_snow_time()[0])
-            data = pref_number(data)
-            data = select_pref(selected_item,data)
+            data = select_pref(selected_item,amedas_snow)
             data = snow1h_color(data)[0]
 
-            st.text(str(get_now_snow_time()[1])+'現在')
+            st.text(str(display_snow_time)+'現在')
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -813,12 +839,10 @@ def main():
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '12時間降雪量':
-            data = get_snow_data(get_now_snow_time()[0])
-            data = pref_number(data)
-            data = select_pref(selected_item,data)
+            data = select_pref(selected_item,amedas_snow)
             data = snow12h_color(data)[0]
 
-            st.text(str(get_now_snow_time()[1])+'現在')
+            st.text(str(display_snow_time)+'現在')
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -866,12 +890,10 @@ def main():
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '24時間降雪量':
-            data = get_snow_data(get_now_snow_time()[0])
-            data = pref_number(data)
-            data = select_pref(selected_item,data)
+            data = select_pref(selected_item,amedas_snow)
             data = snow24h_color(data)[0]
 
-            st.text(str(get_now_snow_time()[1])+'現在')
+            st.text(str(display_snow_time)+'現在')
             layer = pdk.Layer(
                 "ColumnLayer",
                 data=data,
@@ -915,6 +937,59 @@ def main():
                 ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間降雪量']
                 st.write('24時間降雪量ランキング')
                 st.write(ranksnow24h)
+
+# --------------------------------------------------------------------------------------------------                 
+
+        elif option == '積雪の深さ':
+            data = select_pref(selected_item,amedas_snow)
+            data = snow_color(data)[0]
+            if data.empty:
+                st.text('選択した地域では、積雪計による積雪の観測を行っていません')
+
+            else:
+                st.text(str(display_snow_time)+'現在')
+                layer = pdk.Layer(
+                    "ColumnLayer",
+                    data=data,
+                    get_position=["lon", "lat"],
+                    get_elevation='積雪の深さ',
+                    elevation_scale=2500,
+                    radius=2500,
+                    elevation_range=[0, 500],
+                    get_fill_color='color',
+                    get_line_color=[0, 0, 0],
+                    pickable=True,
+                    auto_highlight=True,
+                    extruded=True,
+                )
+
+                tooltip = {
+                    "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>積雪の深さ：{積雪の深さ}cm",
+                    "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+                }
+
+                # 視点・ズームレベルの設定
+                view_state = pdk.ViewState(
+                    longitude=float(zoom_calc(data)[0]),
+                    latitude=float(zoom_calc(data)[1]),
+                    zoom=zoom_calc(data)[2],
+                    min_zoom=3,
+                    max_zoom=15,
+                    pitch=50,
+                    bearing=-0
+                )
+
+                r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
+
+                st.pydeck_chart(r)
+                
+                if snow_color(data)[1] is None:
+                    st.write('選択された地方では現在、1cm以上の降雪は観測されていません')
+                else:
+                    ranksnow24h = snow_color(data)[1][['都道府県','kjName','knName','積雪の深さ']]
+                    ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','積雪の深さ']
+                    st.write('積雪の深さランキング')
+                    st.write(ranksnow24h)
 
 
 if __name__ == "__main__":
