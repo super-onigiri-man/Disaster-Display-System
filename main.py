@@ -473,7 +473,7 @@ def zoom_snow_calc(result):
     zoom_distance = max(north_south_distance,east_west_distance)
     # zoom_distance = north_south_distance
 
-    st.text(zoom_distance)
+    # st.text(zoom_distance)
 
 
     # 地図の中心位置設定
