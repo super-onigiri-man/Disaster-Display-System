@@ -352,9 +352,9 @@ def zoom_calc(result):
     zoom_distance = max(north_south_distance,east_west_distance)
     # zoom_distance = north_south_distance
 
-    st.text(north_south_distance)
-    st.text(east_west_distance)
-    st.text(zoom_distance)
+    # st.text(north_south_distance)
+    # st.text(east_west_distance)
+    # st.text(zoom_distance)
 
 
     # 地図の中心位置設定
@@ -793,6 +793,7 @@ def main():
                 st.write('10分間降水量ランキング')
                 st.dataframe(rankpre10m,hide_index=True)
 
+
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降水量':
@@ -1046,6 +1047,8 @@ def main():
                 st.write('24時間降雪量ランキング')
                 st.dataframe(ranksnow24h,hide_index=True)
 
+            st.stop()
+
 # --------------------------------------------------------------------------------------------------                 
 
         elif option == '積雪の深さ':
@@ -1054,6 +1057,7 @@ def main():
             data = snow_color(data)[0]
             if data.empty:
                 st.text('選択した地域では、積雪の観測を行っていません')
+                st.stop()
 
             else:
                 st.text(str(display_snow_time)+'現在')
