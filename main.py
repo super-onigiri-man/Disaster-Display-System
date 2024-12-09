@@ -345,14 +345,16 @@ def zoom_calc(result):
     north_south_distance = north_south / 1000
 
      # 東西の距離を計算（引数は（地点Alat,lon,地点Blat,lon)
-    north_south= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
-    east_west_distance = north_south / 1000
+    east_west= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
+    east_west_distance = east_west / 1000
 
     # 東西南北の距離の長い方を採用（東西に長い地域に対応させるため）
     zoom_distance = max(north_south_distance,east_west_distance)
     # zoom_distance = north_south_distance
 
-    # st.text(zoom_distance)
+    st.text(north_south_distance)
+    st.text(east_west_distance)
+    st.text(zoom_distance)
 
 
     # 地図の中心位置設定
@@ -383,8 +385,8 @@ def zoom_calc(result):
     # 距離によるズーム率
     # 北海道宗谷岬ー沖縄与那国島 約3000km（zoom=zoom_calc(data)）
     if 2500 < zoom_distance <= 3000:
-        center_lat = center_lat - 4
-        center_lon = center_lon + 4
+        center_lat = 32.78
+        center_lon = 140.94
         # st.text(center_lon)
         # st.text(center_lat)
 
@@ -426,18 +428,18 @@ def zoom_calc(result):
         # st.text('zoom7')
         # st.text(center_lon)
         # st.text(center_lat)
-        return center_lon,center_lat,4.7
+        return center_lon,center_lat,5.4
 
     elif 500 < zoom_distance <= 800 :
         # st.text('zoom7')
         # st.text(center_lon)
         # st.text(center_lat)
-        return center_lon,center_lat,5.6
+        return center_lon,center_lat,5.8
     
     else:
         # st.text(center_lon)
         # st.text(center_lat)
-        return center_lon,center_lat,5.6
+        return center_lon,center_lat,5.8
 
 def zoom_snow_calc(result):
     # ズーム率と中心位置の計算(積雪の深さ用)
@@ -466,8 +468,8 @@ def zoom_snow_calc(result):
     north_south_distance = north_south / 1000
 
      # 東西の距離を計算（引数は（地点Alat,lon,地点Blat,lon)
-    north_south= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
-    east_west_distance = north_south / 1000
+    east_west= geod.Inverse(East.iloc[0]['lat'], East.iloc[0]['lon'], West.iloc[0]['lat'], West.iloc[0]['lon'])['s12']
+    east_west_distance = east_west / 1000
 
     # 東西南北の距離の長い方を採用（東西に長い地域に対応させるため）
     zoom_distance = max(north_south_distance,east_west_distance)
@@ -517,13 +519,13 @@ def zoom_snow_calc(result):
         # st.text('zoom7')
         # st.text(center_lon)
         # st.text(center_lat)
-        return center_lon,center_lat,5.2
+        return center_lon,center_lat,5
 
     elif 500 < zoom_distance <= 1000 :
         # st.text('zoom7')
         # st.text(center_lon)
         # st.text(center_lat)
-        return center_lon,center_lat,5
+        return center_lon,center_lat,5.4
     
     else:
         # st.text(center_lon)
@@ -684,21 +686,29 @@ def snow24h_color(result):
         return result,None
     else:
         return result,dftop3
+    
 
+# 地点データ
+amedas_position = get_amedas_position()
 
-def main():
-    # 地点データ
-    amedas_position = get_amedas_position()
-
+def Get_pre_data():
     # データ（雨）
     amedas_pre_time,display_pre_time = get_now_date()
     amedas_precipitation = pd.concat([get_data(amedas_pre_time), amedas_position], axis=1)
     amedas_precipitation = pref_number(amedas_precipitation)
 
+    return amedas_precipitation,display_pre_time
+
+def Get_snow_data():
     # データ（雪）
     amedas_snow_time,display_snow_time = get_now_snow_time()
     amedas_snow = pd.concat([get_snow_data(amedas_snow_time), amedas_position], axis=1)
     amedas_snow = pref_number(amedas_snow)
+
+    return amedas_snow,display_snow_time
+
+def main():
+
 
     # st.text(display_pre_time)
 
@@ -736,6 +746,7 @@ def main():
     
     if st.button('実行'):
         if option == '10分間降水量':
+            amedas_precipitation,display_pre_time = Get_pre_data()
             data = select_pref(selected_item,amedas_precipitation)
             data = pre10m_color(data)[0]
             st.text(str(display_pre_time)+'現在')
@@ -778,13 +789,14 @@ def main():
                 st.write('選択された地方では現在、0.5mm以上の降水は観測されていません')
             else:
                 rankpre10m = pre10m_color(data)[1][['都道府県','kjName','knName','１０分間雨量']]
-                rankpre10m.columns = ['都道府県名','地点名','地点名（よみ）','10分間雨量']
+                rankpre10m.columns = ['都道府県名','地点名','地点名（よみ）','10分間雨量(mm)']
                 st.write('10分間降水量ランキング')
-                st.write(rankpre10m)
+                st.dataframe(rankpre10m,hide_index=True)
 
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降水量':
+            amedas_precipitation,display_pre_time = Get_pre_data()
             data = select_pref(selected_item,amedas_precipitation)
             data = pre1h_color(data)[0]
             st.text(str(display_pre_time)+'現在')
@@ -826,13 +838,14 @@ def main():
                 st.write('選択された地方では現在、0.5mm以上の降水は観測されていません')
             else:
                 rankpre1h = pre1h_color(data)[1][['都道府県','kjName','knName','１時間雨量']]
-                rankpre1h.columns = ['都道府県名','地点名','地点名（よみ）','1時間雨量']
+                rankpre1h.columns = ['都道府県名','地点名','地点名（よみ）','1時間雨量(mm)']
                 st.write('1時間降水量ランキング')
-                st.write(rankpre1h)
+                st.dataframe(rankpre1h,hide_index=True)
 
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '24時間降水量':
+            amedas_precipitation,display_pre_time = Get_pre_data()
             data = select_pref(selected_item,amedas_precipitation)
             data = pre24h_color(data)[0]
             st.text(str(display_pre_time)+'現在')
@@ -874,13 +887,14 @@ def main():
                 st.write('選択された地方では現在、0.5mm以上の降水は観測されていません')
             else:
                 rankpre24h = pre24h_color(data)[1][['都道府県','kjName','knName','２４時間雨量']]
-                rankpre24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間雨量']
+                rankpre24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間雨量(mm)']
                 st.write('24時間降水量ランキング')
-                st.write(rankpre24h)
+                st.dataframe(rankpre24h,hide_index=True)
 
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '1時間降雪量':
+            amedas_snow,display_snow_time = Get_snow_data()
             data = select_pref(selected_item,amedas_snow)
             data = snow1h_color(data)[0]
 
@@ -924,13 +938,14 @@ def main():
                 st.write('選択された地方では現在、1cm以上の降雪は観測されていません')
             else:
                 ranksnow1h = snow1h_color(data)[1][['都道府県','kjName','knName','１時間降雪量']]
-                ranksnow1h.columns = ['都道府県名','地点名','地点名（よみ）','1時間降雪量']
+                ranksnow1h.columns = ['都道府県名','地点名','地点名（よみ）','1時間降雪量(cm)']
                 st.write('1時間降雪量ランキング')
-                st.write(ranksnow1h)
+                st.dataframe(ranksnow1h,hide_index=True)
 
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '12時間降雪量':
+            amedas_snow,display_snow_time = Get_snow_data()
             data = select_pref(selected_item,amedas_snow)
             data = snow12h_color(data)[0]
 
@@ -975,13 +990,14 @@ def main():
                 st.write('選択された地方では現在、1cm以上の降雪は観測されていません')
             else:
                 ranksnow12h = snow12h_color(data)[1][['都道府県','kjName','knName','１２時間降雪量']]
-                ranksnow12h.columns = ['都道府県名','地点名','地点名（よみ）','12時間降雪量']
+                ranksnow12h.columns = ['都道府県名','地点名','地点名（よみ）','12時間降雪量(cm)']
                 st.write('12時間降雪量ランキング')
-                st.write(ranksnow12h)
+                st.dataframe(ranksnow12h,hide_index=True)
 
 # -------------------------------------------------------------------------------------------------- 
 
         elif option == '24時間降雪量':
+            amedas_snow,display_snow_time = Get_snow_data()
             data = select_pref(selected_item,amedas_snow)
             data = snow24h_color(data)[0]
 
@@ -1026,17 +1042,18 @@ def main():
                 st.write('選択された地方では現在、1cm以上の降雪は観測されていません')
             else:
                 ranksnow24h = snow24h_color(data)[1][['都道府県','kjName','knName','２４時間降雪量']]
-                ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間降雪量']
+                ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','24時間降雪量(cm)']
                 st.write('24時間降雪量ランキング')
-                st.write(ranksnow24h)
+                st.dataframe(ranksnow24h,hide_index=True)
 
 # --------------------------------------------------------------------------------------------------                 
 
         elif option == '積雪の深さ':
+            amedas_snow,display_snow_time = Get_snow_data()
             data = select_pref(selected_item,amedas_snow)
             data = snow_color(data)[0]
             if data.empty:
-                st.text('選択した地域では、積雪計による積雪の観測を行っていません')
+                st.text('選択した地域では、積雪の観測を行っていません')
 
             else:
                 st.text(str(display_snow_time)+'現在')
@@ -1079,10 +1096,11 @@ def main():
                     st.write('選択された地方では現在、1cm以上の降雪は観測されていません')
                 else:
                     ranksnow24h = snow_color(data)[1][['都道府県','kjName','knName','積雪の深さ']]
-                    ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','積雪の深さ']
+                    ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','積雪の深さ(cm)']
                     st.write('積雪の深さランキング')
-                    st.write(ranksnow24h)
+                    st.dataframe(ranksnow24h,hide_index=True)
 
 
 if __name__ == "__main__":
+
     main()
