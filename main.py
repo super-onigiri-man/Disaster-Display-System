@@ -1127,14 +1127,14 @@ def main():
 
             st.text('アメダス観測点')
             layer = pdk.Layer(
-                "PointCloudLayer",
+                "ScatterplotLayer",
                 data=data,
                 get_position=["lon", "lat"],
                 get_color=['173', '255', '47'],
                 get_normal=[0, 0, 15],
+                get_radius = 2500,
                 auto_highlight=True,
                 pickable=True,
-                point_size=5
             )
 
             tooltip = {
