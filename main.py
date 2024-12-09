@@ -57,7 +57,7 @@ def get_amedas_position():
     response = requests.get(url)
     data = response.json()
     df2 = pd.DataFrame.from_dict(data, orient='index')
-    df2.drop(columns=['type', 'elems', 'alt', 'enName'], inplace=True) #いらない情報を削除
+    df2.drop(columns=['elems', 'alt', 'enName'], inplace=True) #いらない情報を削除
     df2[['lat1', 'lat2']] = pd.DataFrame(df2['lat'].tolist(), index=df2.index)
     df2[['lon1', 'lon2']] = pd.DataFrame(df2['lon'].tolist(), index=df2.index)
     df2['lat'] = df2['lat1'] + df2['lat2'] / 60 #緯度経度を６０進法に変換
@@ -250,7 +250,19 @@ def pref_number(result):
 
     return result
 
-        
+def amedas_type(result):
+
+    amedas_type = {
+        'A': "管区・地方気象台",
+        'B': "測候所・特別地域気象観測所",
+        'C': "無人観測点",
+        'D': "父島気象観測所",
+        'E': "南鳥島気象観測所",
+        'F': "富士山特別気象観測所"
+    }
+    result['アメダス種別'] = result['type'].map(amedas_type).fillna('不明')
+
+    return result
 
 def get_snow_data(amedas_time):
 
@@ -738,7 +750,7 @@ def main():
 
     option = st.selectbox(
         '表示させたい内容を選択してください',
-        ['10分間降水量', '1時間降水量', '24時間降水量','積雪の深さ','1時間降雪量','12時間降雪量','24時間降雪量']
+        ['10分間降水量', '1時間降水量', '24時間降水量','積雪の深さ','1時間降雪量','12時間降雪量','24時間降雪量','アメダス観測点']
     )
 
 # ------------------------------------------------------------------------------------------------------------------------
@@ -1103,7 +1115,47 @@ def main():
                     ranksnow24h.columns = ['都道府県名','地点名','地点名（よみ）','積雪の深さ(cm)']
                     st.write('積雪の深さランキング')
                     st.dataframe(ranksnow24h,hide_index=True)
+                    
+# -----------------------------------------------------------------------------------------------------
 
+        elif option == 'アメダス観測点':
+            
+            data = get_amedas_position()
+            data = pref_number(data)
+            data = amedas_type(data)
+
+
+            st.text('アメダス観測点')
+            layer = pdk.Layer(
+                "PointCloudLayer",
+                data=data,
+                get_position=["lon", "lat"],
+                get_color=['173', '255', '47'],
+                get_normal=[0, 0, 15],
+                auto_highlight=True,
+                pickable=True,
+                point_size=5
+            )
+
+            tooltip = {
+                "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>観測点種別：{アメダス種別}",
+                "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
+            }
+
+            # 視点・ズームレベルの設定
+            view_state = pdk.ViewState(
+                longitude=float(zoom_calc(data)[0]),
+                latitude=float(zoom_calc(data)[1]),
+                zoom=zoom_calc(data)[2],
+                min_zoom=3,
+                max_zoom=15,
+                pitch=50,
+                bearing=-0
+            )
+
+            r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
+
+            st.pydeck_chart(r)
 
 if __name__ == "__main__":
 
