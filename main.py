@@ -8,6 +8,7 @@ import pydeck as pdk  # 地図の描画
 import streamlit as st  
 import geographiclib.geodesic # 座標の中央値を求めるに使用
 import math
+from PIL import ImageColor
 
 
 # ページ設定
@@ -57,7 +58,7 @@ def get_amedas_position():
     response = requests.get(url)
     data = response.json()
     df2 = pd.DataFrame.from_dict(data, orient='index')
-    df2.drop(columns=['elems', 'alt', 'enName'], inplace=True) #いらない情報を削除
+    df2.drop(columns=['alt', 'enName'], inplace=True) #いらない情報を削除
     df2[['lat1', 'lat2']] = pd.DataFrame(df2['lat'].tolist(), index=df2.index)
     df2[['lon1', 'lon2']] = pd.DataFrame(df2['lon'].tolist(), index=df2.index)
     df2['lat'] = df2['lat1'] + df2['lat2'] / 60 #緯度経度を６０進法に変換
@@ -251,6 +252,8 @@ def pref_number(result):
     return result
 
 def amedas_type(result):
+    weather_elements = ['気温', '降水量', '風向', '風速', '日照時間', '積雪深', '湿度', '気圧']
+    result['color'] = object  # color 列を初期化
 
     amedas_type = {
         'A': "管区・地方気象台",
@@ -260,7 +263,83 @@ def amedas_type(result):
         'E': "南鳥島気象観測所",
         'F': "富士山特別気象観測所"
     }
+
+    # amedas_elmes = {
+    #     '11111111':'気温，降水量，風向，風速，日照時間，積雪深，湿度，気圧',
+    #     '11111011':'気温，降水量，風向，風速，日照時間，湿度，気圧',
+    #     '11112110':'気温，降水量，風向，風速，日照時間，積雪深，湿度',
+    #     '11112010':'気温，降水量，風向，風速，日照時間，湿度',
+    #     '11111100':'気温，降水量，風向，風速，日照時間，積雪深',
+    #     '11112100':'気温，降水量，風向，風速，日照時間，積雪深',
+    #     '11112000':'気温，降水量，風向，風速，日照時間',
+    #     '11110100':'気温，降水量，風向，風速，積雪深',
+    #     '10001011':'気温, 日照時間，湿度，気圧',
+    #     '11110000':'気温，降水量，風向，風速',
+    #     '01000100':'降水量，積雪深',
+    #     '01000000':'降水量'       
+    # }
     result['アメダス種別'] = result['type'].map(amedas_type).fillna('不明')
+    # result['観測種別'] = result['elems'].map(amedas_elmes).fillna('不明')
+
+    # iterrows() を使ってデータフレームの各行にアクセスする
+    for index, row in result.iterrows():
+        # 8要素
+        if row['elems'] == '11111111':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，積雪深，湿度，気圧'
+            result['color'] = '#ff0000'  # red
+            # result["color"] = result["１時間雨量"].apply()
+            # result['color'] = ImageColor.getcolor(result['color'].iloc[0],'RGB')
+
+        # 7要素
+        elif row['elems'] == '11111011':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，湿度，気圧'
+            result.loc[index, 'color'] = '#ff4500'  # orange
+
+        elif row['elems'] == '11112110':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，積雪深，湿度'
+            result.loc[index, 'color'] = '#ff4500'  # orange
+
+        # 6要素
+        elif row['elems'] == '11112010':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，湿度'
+            result.loc[index, 'color'] = '#FF69B4' # hotpink
+
+        elif row['elems'] == '11111100' or row['elems'] == '11112100':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，積雪深'
+            result.loc[index, 'color'] = '#FF69B4'  # hotpink
+
+        # 5要素
+        elif row['elems'] == '11112000':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間'
+            result.loc[index, 'color'] = '#ffff00'  # yellow
+
+        elif row['elems'] == '11110100':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速，積雪深'
+            result.loc[index, 'color'] = '#ffff00'  # yellow
+
+        # 4要素
+        elif row['elems'] == '10001011':
+            result.loc[index, '観測種別'] = '気温, 日照時間，湿度，気圧'
+            result.loc[index, 'color'] = '#008000'  # green
+
+        elif row['elems'] == '11110000':
+            result.loc[index, '観測種別'] = '気温，降水量，風向，風速'
+            result.loc[index, 'color'] = '#008000'  # green
+
+        # 2・1要素
+        elif row['elems'] == '01000100':
+            result.loc[index, '観測種別'] = '降水量，積雪深'
+            result.loc[index, 'color'] = '#0000ff'  # blue
+
+        elif row['elems'] == '01000000':
+            result.loc[index, '観測種別'] = '降水量'
+            result.loc[index, 'color'] = '#0000ff' # blue
+
+        else:
+            result.loc[index, '観測種別'] = '不明'
+            result.loc[index, 'color'] = '#000000'  # black (default)
+
+    print(result)
 
     return result
 
@@ -629,6 +708,8 @@ def snow_color(result):
         result["color"] = result["積雪の深さ"].apply(
             lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
         )
+
+        # print(result['color'])
 
         dftop3 = result.sort_values(by='積雪の深さ', ascending=False).head(3)
         if dftop3['積雪の深さ'].all() == 0:
@@ -1124,21 +1205,22 @@ def main():
             data = pref_number(data)
             data = amedas_type(data)
 
+            print(data)
 
             st.text('アメダス観測点')
             layer = pdk.Layer(
                 "ScatterplotLayer",
                 data=data,
                 get_position=["lon", "lat"],
-                get_color=['173', '255', '47'],
+                get_color=[173,255,47],
                 get_normal=[0, 0, 15],
-                get_radius = 2500,
+                get_radius = 3000,
                 auto_highlight=True,
                 pickable=True,
             )
 
             tooltip = {
-                "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>観測点種別：{アメダス種別}",
+                "html": "都道府県：<ruby>{都道府県}<rt>{都道府県よみ}</rt></ruby><br>地点名：<ruby>{kjName}<rt>{knName}</rt></ruby><br>観測点種別：{アメダス種別}<br>観測データ：{観測種別}",
                 "style": {"background": "#1a1a1a", "color": "white", "font-family": '"ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif', "z-index": "5000"},
             }
 
