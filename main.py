@@ -877,7 +877,7 @@ def main():
             r = pdk.Deck(layer, tooltip=tooltip, initial_view_state=view_state)
 
             st.pydeck_chart(r)
-
+            
             if pre10m_color(data)[1] is None:
                 st.write('選択された地方では現在、0.5mm以上の降水は観測されていません')
             else:
@@ -997,7 +997,7 @@ def main():
                 "ColumnLayer",
                 data=data,
                 get_position=["lon", "lat"],
-                get_elevation='１時間降雪量',
+                get_elevation='option',
                 elevation_scale=2500,
                 radius=2500,
                 elevation_range=[0, 500],
@@ -1158,7 +1158,7 @@ def main():
                     "ColumnLayer",
                     data=data,
                     get_position=["lon", "lat"],
-                    get_elevation='積雪の深さ',
+                    get_elevation=option,
                     elevation_scale=2500,
                     radius=2500,
                     elevation_range=[0, 500],
