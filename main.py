@@ -261,7 +261,8 @@ def amedas_type(result):
         'C': "無人観測点",
         'D': "父島気象観測所",
         'E': "南鳥島気象観測所",
-        'F': "富士山特別気象観測所"
+        'F': "富士山特別気象観測所",
+        'G': '新設観測点'
     }
 
     # amedas_elmes = {
@@ -281,6 +282,12 @@ def amedas_type(result):
     result['アメダス種別'] = result['type'].map(amedas_type).fillna('不明')
     # result['観測種別'] = result['elems'].map(amedas_elmes).fillna('不明')
 
+    # # 'A'から'F'以外のTypeを持つ行を抽出
+    # other_types = result[~result['type'].isin(['A', 'B', 'C', 'D', 'E', 'F'])]
+
+    # # 結果を出力
+    # print(other_types)
+
     # iterrows() を使ってデータフレームの各行にアクセスする
     for index, row in result.iterrows():
         # 8要素
@@ -295,7 +302,7 @@ def amedas_type(result):
             result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，湿度，気圧'
             result.loc[index, 'color'] = '#ff4500'  # orange
 
-        elif row['elems'] == '11112110':
+        elif row['elems'] == '11112110' or row['elems'] == '11111110':
             result.loc[index, '観測種別'] = '気温，降水量，風向，風速，日照時間，積雪深，湿度'
             result.loc[index, 'color'] = '#ff4500'  # orange
 
@@ -339,7 +346,7 @@ def amedas_type(result):
             result.loc[index, '観測種別'] = '不明'
             result.loc[index, 'color'] = '#000000'  # black (default)
 
-    print(result)
+    # print(result)
 
     return result
 
@@ -702,9 +709,16 @@ def snow_color(result):
         colors = cm.hawaii_r(np.linspace(0, 1, 256))
         rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
 
-        # 最小値（0cm）と最大値を設定　これを参考に色付け
-        min_height = 0
-        max_height = 250
+        if result['積雪の深さ'].max() < 150:
+
+            min_height = 0
+            max_height = 150
+
+        else:
+            # 最小値（0cm）と最大値を設定　これを参考に色付け
+            min_height = result['積雪の深さ'].min()
+            max_height = result['積雪の深さ'].max()
+
         result["color"] = result["積雪の深さ"].apply(
             lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
         )
