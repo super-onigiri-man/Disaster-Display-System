@@ -369,7 +369,7 @@ def select_pref(select_pref_list,result):
     #都道府県選択用
     # 地点は内閣府地方区分Aを元に沖縄地方に津波予報区の奄美群島・トカラ列島を追加
 
-    # ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', ''奄美群島・トカラ列島・沖縄'']
+    # ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', ','奄美群島・トカラ列島・沖縄'']
     pref_list = ['北海道', '東北', '関東', '中部', '北陸', '近畿', '中国', '四国', '九州', '奄美・トカラ・沖縄']
     notselect = list(set(pref_list) - set(select_pref_list))
 
@@ -739,9 +739,15 @@ def snow1h_color(result):
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
     rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
 
+    if result['１時間降雪量'].max() < 25:
+        min_height = 0
+        max_height = 25
+
+    else:
+        min_height = 0
+        max_height = result['１時間降雪量'].max()
+
     # 最小値（0cm）と最大値を設定　これを参考に色付け
-    min_height = 0
-    max_height = 25
     result["color"] = result["１時間降雪量"].apply(
         lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
     )
@@ -760,9 +766,15 @@ def snow12h_color(result):
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
     rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
 
+    if result['１２時間降雪量'].max() < 150:
+        min_height = 0
+        max_height = 150
+
+    else:
+        min_height = 0
+        max_height = result['１２時間降雪量'].max()
+
     # 最小値（0cm）と最大値を設定　これを参考に色付け
-    min_height = 0
-    max_height = 150
     result["color"] = result["１２時間降雪量"].apply(
         lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
     )
@@ -781,9 +793,15 @@ def snow24h_color(result):
     colors = cm.hawaii_r(np.linspace(0, 1, 256))
     rgb_colors = (colors[:, :3] * 255).astype(int).tolist()
 
+    if result['２４時間降雪量'].max() < 200:
+        min_height = 0
+        max_height = 200
+
+    else:
+        min_height = 0
+        max_height = result['２４時間降雪量'].max()
+
     # 最小値（0cm）と最大値を設定　これを参考に色付け
-    min_height = 0
-    max_height = 500
     result["color"] = result["２４時間降雪量"].apply(
         lambda h: rgb_colors[int(255 * ((h - min_height) / (max_height - min_height)))]
     )
